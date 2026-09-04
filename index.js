@@ -54,7 +54,7 @@ const startBot = async () => {
                 const sticker = new Sticker(buffer, {
                     pack: "Figurinhas",
                     author: "Bot",
-                    type: StickerTypes.FULL,
+                    type: StickerTypes.CROPPED,
                     quality: 70,
                 });
 
