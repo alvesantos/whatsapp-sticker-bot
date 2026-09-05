@@ -51,18 +51,45 @@ const startBot = async () => {
             if (!imageMessage && !videoMessage) continue;
 
             const jid = msg.key.remoteJid;
+            const MAX_VIDEO_SECONDS = 6;
+            const MAX_STICKER_BYTES = 500 * 1024;
+
+            if (videoMessage?.seconds > MAX_VIDEO_SECONDS) {
+                await sock.sendMessage(jid, {
+                    text: `Video muito longo pra virar figurinha (max ${MAX_VIDEO_SECONDS}s). Manda um video mais curto.`,
+                });
+                continue;
+            }
 
             try {
+                if (videoMessage) {
+                    await sock.sendMessage(jid, { text: "Processando video, pode demorar um pouco..." });
+                }
+
                 const buffer = await downloadMediaMessage(msg, "buffer", {});
 
-                const sticker = new Sticker(buffer, {
-                    pack: "Figurinhas",
-                    author: "Bot",
-                    type: StickerTypes.CROPPED,
-                    quality: 70,
-                });
+                const qualitySteps = videoMessage ? [70, 50, 30, 15] : [70];
 
-                const stickerBuffer = await sticker.toBuffer();
+                let stickerBuffer;
+                for (const quality of qualitySteps) {
+                    const sticker = new Sticker(buffer, {
+                        pack: "Figurinhas",
+                        author: "Bot",
+                        type: StickerTypes.CROPPED,
+                        quality,
+                    });
+
+                    stickerBuffer = await sticker.toBuffer();
+
+                    if (stickerBuffer.length <= MAX_STICKER_BYTES) break;
+                }
+
+                if (stickerBuffer.length > MAX_STICKER_BYTES) {
+                    await sock.sendMessage(jid, {
+                        text: "Figurinha ficou maior que o limite do WhatsApp (500KB) mesmo com qualidade reduzida. Manda um video mais curto ou mais simples.",
+                    });
+                    continue;
+                }
 
                 await sock.sendMessage(jid, { sticker: stickerBuffer });
             } catch (err) {
