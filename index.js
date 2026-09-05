@@ -44,7 +44,11 @@ const startBot = async () => {
                 msg.message.imageMessage ||
                 msg.message.viewOnceMessageV2?.message?.imageMessage;
 
-            if (!imageMessage) continue;
+            const videoMessage =
+                msg.message.videoMessage ||
+                msg.message.viewOnceMessageV2?.message?.videoMessage;
+
+            if (!imageMessage && !videoMessage) continue;
 
             const jid = msg.key.remoteJid;
 
@@ -63,7 +67,7 @@ const startBot = async () => {
                 await sock.sendMessage(jid, { sticker: stickerBuffer });
             } catch (err) {
                 console.error("Erro ao gerar figurinha:", err);
-                await sock.sendMessage(jid, { text: "Nao consegui transformar essa foto em figurinha." });
+                await sock.sendMessage(jid, { text: "Nao consegui transformar isso em figurinha." });
             }
         }
     });
